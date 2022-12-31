@@ -182,3 +182,148 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 if ( class_exists( 'WooCommerce' ) ) {
 	require get_template_directory() . '/inc/woocommerce.php';
 }
+
+
+
+
+function prefix_category_title( $title ) {
+    if ( is_category() ) {
+        $title = single_cat_title( '', false );
+    }
+	if ( is_tag() ){
+		$title = single_tag_title( '', false );
+	}
+    return $title;
+}
+add_filter( 'get_the_archive_title', 'prefix_category_title' );
+
+
+/**
+ * Filter the "read more" excerpt string link to the post.
+ *
+ * @param string $more "Read more" excerpt string.
+ * @return string (Maybe) modified "read more" excerpt string.
+ */
+function wpdocs_excerpt_more( $more ) {
+	if ( ! is_single() ) {
+		$more = sprintf( '<div class="nav-links"><a class="read-more more-link" href="%1$s">%2$s</a></div>',
+			get_permalink( get_the_ID() ),
+			__( 'Read More', 'textdomain' )
+		);
+	}
+
+	return $more;
+}
+add_filter( 'excerpt_more', 'wpdocs_excerpt_more' );
+
+function modify_read_more_link() {
+	return '<a class="more-link" href="' . get_permalink() . '">Continue Reading</a>';
+   }
+add_filter( 'the_content_more_link', 'modify_read_more_link' );
+   
+
+
+function dpe_numeric_posts_nav() {
+  
+    if( is_singular() )
+        return;
+  
+    global $wp_query;
+  
+    /** Stop execution if there's only 1 page */
+    if( $wp_query->max_num_pages <= 1 )
+        return;
+  
+    $paged = get_query_var( 'paged' ) ? absint( get_query_var( 'paged' ) ) : 1;
+    $max   = intval( $wp_query->max_num_pages );
+  
+    /** Add current page to the array */
+    if ( $paged >= 1 )
+        $links[] = $paged;
+  
+    /** Add the pages around the current page to the array */
+    if ( $paged >= 3 ) {
+        $links[] = $paged - 1;
+        $links[] = $paged - 2;
+    }
+  
+    if ( ( $paged + 2 ) <= $max ) {
+        $links[] = $paged + 2;
+        $links[] = $paged + 1;
+    }
+  
+    echo '<div class="navigation wp-pagenavi"><ul>' . "\n";
+  
+    /** Previous Post Link */
+    if ( get_previous_posts_link() )
+        printf( '<li>%s</li>' . "\n", get_previous_posts_link() );
+  
+    /** Link to first page, plus ellipses if necessary */
+    if ( ! in_array( 1, $links ) ) {
+        $class = 1 == $paged ? ' class="active"' : '';
+  
+        printf( '<li%s><a href="%s">%s</a></li>' . "\n", $class, esc_url( get_pagenum_link( 1 ) ), '1' );
+  
+        if ( ! in_array( 2, $links ) )
+            echo '<li>…</li>';
+    }
+  
+    /** Link to current page, plus 2 pages in either direction if necessary */
+    sort( $links );
+    foreach ( (array) $links as $link ) {
+        $class = $paged == $link ? ' class="active"' : '';
+        printf( '<li%s><a href="%s">%s</a></li>' . "\n", $class, esc_url( get_pagenum_link( $link ) ), $link );
+    }
+  
+    /** Link to last page, plus ellipses if necessary */
+    if ( ! in_array( $max, $links ) ) {
+        if ( ! in_array( $max - 1, $links ) )
+            echo '<li>…</li>' . "\n";
+  
+        $class = $paged == $max ? ' class="active"' : '';
+        printf( '<li%s><a href="%s">%s</a></li>' . "\n", $class, esc_url( get_pagenum_link( $max ) ), $max );
+    }
+  
+    /** Next Post Link */
+    if ( get_next_posts_link() )
+        printf( '<li>%s</li>' . "\n", get_next_posts_link() );
+  
+    echo '</ul></div>' . "\n";
+  
+}
+
+
+
+function add_favicon() {
+	echo '<link rel="shortcut icon" type="image/x-icon" href="'.get_template_directory_uri().'/assets/favicon.ico" />';
+}
+
+add_action('wp_head', 'add_favicon');
+
+
+function add_additional_class_on_li($classes, $item, $args) {
+    if(isset($args->add_li_class)) {
+        $classes[] = $args->add_li_class;
+    }
+    return $classes;
+}
+add_filter('nav_menu_css_class', 'add_additional_class_on_li', 1, 3);
+
+function add_link_atts($atts) {
+	$atts['class'] = "nav-link js-scroll-trigger";
+	return $atts;
+}
+
+add_filter( 'nav_menu_link_attributes', 'add_link_atts');
+
+
+
+function add_additional_class_on_anchor($classes, $item, $args) {
+    if(isset($args->add_a_class)) {
+        $classes['class'] = $args->add_a_class;
+    }
+
+	// $atts['class'] = "nav-link js-scroll-trigger";
+    return $classes;
+}
+add_filter( 'nav_menu_link_attributes', 'add_additional_class_on_anchor', 1, 3);
